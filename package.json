@@ -1,0 +1,11 @@
+{
+  "name": "gucci-web-wallet",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/guccicoin-project/gucci-web-wallet.git",
+  "author": "Jake Walker <hi@jakew.me>",
+  "license": "MIT",
+  "dependencies": {
+    "turtlecoin-rpc": "^0.8.7"
+  }
+}
