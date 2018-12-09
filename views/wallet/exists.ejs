@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <%- include("../partials/meta"); %>
+    <%- include("../partials/css"); %>
+    <title>Guccicoin Web Wallet</title>
+  </head>
+  <body>
+    <%- include("../partials/nav"); %>
+
+    <%- include("../partials/alerts"); %>
+
+    <section class="section" id="existingWalletError">
+      <div class="notification is-warning">
+        Unfortunately, you already have a wallet attached to your account so this action is not allowed. This is just to
+        prevent people from accidently deleting wallets. If you need another wallet you can backup this one and detach it
+        from your account, or you could create a new account.
+      </div>
+    </section>
+
+    <%- include("../partials/js"); %>
+  </body>
+</html>

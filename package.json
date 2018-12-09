@@ -6,6 +6,18 @@
   "author": "Jake Walker <hi@jakew.me>",
   "license": "MIT",
   "dependencies": {
+    "body-parser": "^1.18.3",
+    "connect-session-knex": "^1.4.0",
+    "cookie-parser": "^1.4.3",
+    "ejs": "^2.6.1",
+    "express": "^4.16.4",
+    "express-session": "^1.15.6",
+    "knex": "^0.15.2",
+    "moment": "^2.22.2",
+    "mysql": "^2.16.0",
+    "passport": "^0.4.0",
+    "passport-auth0": "^1.1.0",
+    "sqlite3": "^4.0.4",
     "turtlecoin-rpc": "^0.8.7"
   }
 }

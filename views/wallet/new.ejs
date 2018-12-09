@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <%- include("../partials/meta"); %>
+    <%- include("../partials/css"); %>
+    <title>New - Guccicoin Web Wallet</title>
+  </head>
+  <body>
+    <%- include("../partials/nav"); %>
+
+    <%- include("../partials/alerts"); %>
+
+    <section class="section">
+      <div class="container">
+        <p class="content">Your wallet has now been created with a primary address of <code><%= address %></code>.</p>
+        <h1 class="title">Recovery Keys</h1>
+        <p class="content">
+          The recovery keys let you restore your wallet and retrive the funds if you ever lose your account. <b>We highly
+          recommend keeping a backup of your view and spend keys.</b> Please keep in mind that <b>these keys allow anyone
+          access to your wallet</b>.
+        </p>
+        <p class="content">
+          It is recommended to write these keys down on a piece of paper and put in a safe place such as a safe, however,
+          you could also store these keys on a backed up text document or in a secure password manager.
+        </p>
+        <h2 class="title is-4">View Key</h2>
+        <pre class="content"><code><%= viewKey.viewSecretKey %></code></pre>
+        <h2 class="title is-4">Spend Key</h2>
+        <pre class="content"><code><%= spendKey.spendSecretKey %></code></pre>
+        <p class="content has-text-danger">
+          It is important that you double check what you have written down as there are no extra checks.
+        </p>
+        <p class="content">
+          You can always view your recovery seeds again in the wallet settings.
+        </p>
+        <a class="button is-primary" href="/wallet">Done</a>
+      </div>
+    </section>
+
+    <%- include("../partials/js"); %>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+<script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jdenticon@2.1.0" async></script>
+<script src="https://cdn.staticaly.com/gh/davidshimjs/qrcodejs/master/qrcode.min.js"></script>
+
+<script>
+  $(".navbar-item").each(function(e) { 
+    $(this).click(function() {
+      if ($("#navbarMainBurger").hasClass("is-active")) {
+        $("#navbarMainBurger").removeClass("is-active");
+        $("#navbarMain").removeClass("is-active");
+      }
+    });
+  });
+
+  $('#navbarMainBurger').click(function(e) {
+    if($('#navbarMainBurger').hasClass('is-active')){
+      $('#navbarMainBurger').removeClass('is-active');
+      $('#navbarMain').removeClass('is-active');
+    }else {
+      $('#navbarMainBurger').addClass('is-active');
+      $('#navbarMain').addClass('is-active');
+    }
+  });
+</script>
+
+<script>
+  window.jdenticon_config = {
+    backColor: "#ffffff"
+  };
+</script>

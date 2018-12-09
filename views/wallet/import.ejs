@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <%- include("../partials/meta"); %>
+    <%- include("../partials/css"); %>
+    <title>Import - Guccicoin Web Wallet</title>
+  </head>
+  <body>
+    <%- include("../partials/nav"); %>
+
+    <section class="hero is-primary">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            Import a Wallet
+          </h1>
+          <h2 class="subtitle">
+            Attach an existing Guccicoin wallet to your account.
+          </h2>
+        </div>
+      </div>
+    </section>
+
+    <%- include("../partials/alerts"); %>
+
+    <% if (wallet) { %>
+      <section class="section" id="existingWalletError">
+        <div class="notification is-warning">
+          Unfortunately, you already have a wallet attached to your account so you are not allowed to attach another. You will have to either create another account or detach your existing wallet.
+        </div>
+      </section>
+    <% } else { %>
+      <section class="section" id="walletInputs">
+        <div class="container">
+          <p class="content">
+            To import your wallet you will need it's <b>spend key</b> and it's <b>view key</b>. You can find this:
+          </p>
+          <div class="content">
+            <ul>
+              <li>On your paper wallet.</li>
+              <li>On <code>zedwallet</code>, by opening your existing wallet and press <code>4</code> to export.</li>
+              <li>With your <b>seed or mnemonic phrase</b> <i>(see below)</i>.</li>
+            </ul>
+          </div>
+          <p class="content">
+            If you don't have these and you have a <b>seed or mnemonic phrase</b> instead, go to the <a href="https://guccicoin-project.github.io/paper-wallet/">paper wallet generator</a>,
+            hit 'Restore keys from seed phrase', type your phrase in the textbox and click 'Restore Keys', then copy and
+            paste your View and Spend Keys below.
+          </p>
+
+          <form action="/wallet/import" method="POST">
+            <div class="field">
+              <label class="label">Public Key</label>
+              <div class="control has-icons-left">
+                <input id="publicKeyInput" name="publicKey" class="input is-danger" type="text" placeholder="gucci3URv8AdD8UPR6YUKg7Vj3ThLP1Pn2RmkKoJMVWrc5erW4X1CPG3QsLPqJoe29Z8nr8jaRotjdF36aVaMMPV3JXyeUdrc772y">
+                <span class="icon is-small is-left">
+                  <i class="fas fa-key"></i>
+                </span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label">Spend Key</label>
+              <div class="control has-icons-left">
+                <input id="spendKeyInput" name="spendKey" class="input is-danger" type="text" placeholder="5d0639033466729423b103eb3600d9e288e0ad26ddc71fea9dc9098ab96a050b">
+                <span class="icon is-small is-left">
+                  <i class="fas fa-key"></i>
+                </span>
+              </div>
+            </div>
+
+            <div class="field is-grouped">
+              <div class="control">
+                <button id="submitButton" type="submit" class="button is-primary" disabled>Submit</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </section>
+    <% } %>
+
+    <%- include("../partials/js"); %>
+    <script>
+      var publicKeyValid = false;
+      var spendKeyValid = false;
+      
+      $("#publicKeyInput").keyup(function() {
+        if (($(this).val().length != 101 && $(this).val().length != 189) || $(this).val().substring(0, 5) != "gucci") {
+          publicKeyValid = false;
+          $(this).removeClass("is-success").addClass("is-danger");
+        } else {
+          publicKeyValid = true;
+          $(this).removeClass("is-danger").addClass("is-success");
+        }
+        update();
+      });
+
+      $("#spendKeyInput").keyup(function() {
+        if (isHex($(this).val()) && $(this).val().length == 64) {
+          spendKeyValid = true;
+          $(this).removeClass("is-danger").addClass("is-success");
+        } else {
+          spendKeyValid = false;
+          $(this).removeClass("is-success").addClass("is-danger");
+        }
+        update();
+      });
+
+      function update() {
+        $("#submitButton").prop("disabled", !(publicKeyValid && spendKeyValid));
+      }
+
+      function isHex(input) {
+        var re = /[0-9A-Fa-f]{6}/g;
+        return re.test(input);
+      }
+    </script>
+  </body>
+</html>
