@@ -37,13 +37,13 @@ app.use(session({
         knex: knex
     })
 }));
-app.use(passport.initialize());
-app.use(passport.session());
 app.use(require("cookie-parser")());
 app.use(require("body-parser").json());
 app.use(require("body-parser").urlencoded({
     extended: false
 }));
+app.use(passport.initialize());
+app.use(passport.session());
 app.use((req, res, next) => {
     res.locals.authd = (req.user ? true : false);
 
