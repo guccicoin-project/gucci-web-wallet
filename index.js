@@ -59,6 +59,10 @@ app.use((req, res, next) => {
 
     next();
 });
+app.use(require("express-redirect-loop")({
+  defaultPath: "/",
+  maxRedirects: 5
+}));
 
 passport.serializeUser((user, done) => {
     done(null, user);
