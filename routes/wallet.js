@@ -21,7 +21,7 @@ const service = new TurtleService({
     rpcPassword: process.env.SERVICE_PASSWORD, // must be set to the password used to run turtle-service
    
     // RPC API default values
-    defaultMixin: false, // the default mixin to use for transactions, the default setting is false which means we don't have a default value
+    defaultMixin: 0, // the default mixin to use for transactions, the default setting is false which means we don't have a default value
     defaultFee: 0.1, // the default transaction fee for transactions
     defaultBlockCount: 500, // the default number of blocks when blockCount is required
     decimalDivisor: 100, // Currency has many decimal places?
@@ -117,7 +117,8 @@ router.post("/sendtransaction", requireWallet(), (req, res) => {
       addresses: [
         res.locals.wallet.walletAddress
       ],
-      changeAddress: res.locals.wallet.walletAddress
+      changeAddress: res.locals.wallet.walletAddress,
+      mixin: 0
     }).then((result) => {
       res.send(`Transaction: ${JSON.stringify(result)}`);
     });

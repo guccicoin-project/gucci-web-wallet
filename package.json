@@ -20,5 +20,10 @@
     "passport-auth0": "^1.1.0",
     "sqlite3": "^4.0.4",
     "turtlecoin-rpc": "^0.8.7"
+  },
+  "devDependencies": {
+    "eslint": "^5.10.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.14.0"
   }
 }
