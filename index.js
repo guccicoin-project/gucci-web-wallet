@@ -49,6 +49,7 @@ passport.use(new Auth0Strategy({
   callbackURL: process.env.AUTH0_CALLBACK_URL || "http://localhost:3000/callback",
 }, (accessToken, refreshToken, extraParams, profile, done) => done(null, profile)));
 
+app.set("trust proxy", (process.env.NODE_ENV === "production"));
 app.set("view engine", "ejs");
 
 app.use(session({
