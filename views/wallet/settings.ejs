@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <%- include("../partials/meta"); %>
+    <%- include("../partials/css"); %>
+    <style>
+      #keys {
+        margin-top: 2em;
+        padding: 1em;
+        border-radius: 5px;
+      }
+
+      #keys > pre {
+        border-radius: 2px;
+      }
+    </style>
+
+    <title>Settings - Guccicoin Web Wallet</title>
+  </head>
+  <body>
+    <%- include("../partials/nav"); %>
+
+    <%- include("../partials/alerts"); %>
+
+    <section class="section">
+      <div class="container">
+        <h1 class="title">Wallet Settings</h1>
+        <h2 class="title is-4">Wallet Information</h2>
+        <h3 class="title is-5">Public Address</h2>
+        <p class="content">
+          This is the public address of your wallet and it's what people use to
+          send you coins.
+        </p>
+        <pre class="content"><code><%= wallet.walletAddress %></code></pre>
+        <h2 class="title is-5">Wallet Keys</h2>
+        <p class="content">
+          <b>Your wallet keys are used to restore your wallet if you ever forget
+          your wallet details.</b> It's important that you keep these keys safe
+          but also remember that these keys work for anyone.
+        </p>
+        <button id="keysToggle" class="button is-danger">Show Wallet Keys</button>
+
+        <div id="keys" class="has-background-danger" style="display: none;">
+          <p class="content has-text-white">
+            These keys give full access to your funds! Be careful of where you put
+            these and if there's people looking behind you.
+          </p>
+          <h3 class="title is-6 has-text-white">View Key</h2>
+          <pre class="content"><code><%= viewKey.viewSecretKey %></code></pre>
+          <h3 class="title is-6 has-text-white">Spend Key</h2>
+          <pre class="content"><code><%= spendKeys.spendSecretKey %></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <%- include("../partials/js"); %>
+    <script>
+      $("#keysToggle").click(function() {
+        $("#keys").toggle();
+        if ($("#keys").is(":visible")) {
+          $("#keysToggle").removeClass("is-danger").addClass("is-success").text("Hide Wallet Keys");
+        } else {
+          $("#keysToggle").removeClass("is-success").addClass("is-danger").text("Show Wallet Keys");
+        }
+      });
+    </script>
+  </body>
+</html>

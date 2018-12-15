@@ -20,6 +20,12 @@
       <a class="navbar-item" href="/wallet">
         Wallet
       </a>
+
+      <% if (authd) { %>
+        <a class="navbar-item" href="/settings">
+          Settings
+        </a>
+      <% } %>
     </div>
 
     <div class="navbar-end">

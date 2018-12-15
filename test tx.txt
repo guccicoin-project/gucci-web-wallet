@@ -1,0 +1,15 @@
+address: "gucci3VWY73cLX6cYX6YhjDzRUVEEzpfE29UaN7U1rH4iqqBnwcLvqk1sjsKXcaQXVcmRWefrvFF7VUqRoaD1CMLMZQZFgm3nEJ1Y"
+amount: 99.9
+blockHash: "09307cb03ac5ce3e7a45f98660102c215bfe2247fbfcee2b633ce60c35843ebd"
+blockIndex: 925
+extra: "018b17c80472a4467cd57912709e1ff422398aec1e2e85f865bb082f43733b495e0221005d60ffd9543bc08e760026fb1e63c4baf665522c38b6e47f326d8994cfea3852"
+fee: 0.1
+inbound: true
+isBase: false
+paymentId: "5d60ffd9543bc08e760026fb1e63c4baf665522c38b6e47f326d8994cfea3852"
+state: 0
+timestamp: 1544359017
+transactionAmount: 99.9
+transactionHash: "3ae03e7b7b13e3b9246c3b22dba1c2d9785f9ea52f5a01988b27ddaf930fff56"
+type: 0
+unlockTime: 0

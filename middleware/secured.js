@@ -1,7 +1,10 @@
-module.exports = () => {
-  return function secured(req, res, next) {
-    if (req.user) { return next(); }
-    req.session.returnTo = req.originalUrl;
-    res.redirect("/login");
-  };
+"use strict";
+
+module.exports = () => function secured(req, res, next) {
+  if (req.user) {
+    return next();
+  }
+
+  req.session.returnTo = req.originalUrl;
+  res.redirect("/login");
 };

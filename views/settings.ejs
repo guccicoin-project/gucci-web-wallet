@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <%- include("partials/meta"); %>
+    <%- include("partials/css"); %>
+    <title>Settings - Guccicoin Web Wallet</title>
+  </head>
+  <body>
+    <%- include("partials/nav"); %>
+
+    <%- include("partials/alerts"); %>
+
+    <section class="section">
+      <div class="container">
+        <h1 class="title">Account Settings</h1>
+        <h2 class="title is-4">API Settings</h2>
+        <p class="content">
+          We provide an API to easily develop applications ontop of Guccicoin. To
+          use these APIs you will need an API key, this API key allows access to your
+          account and your wallet so be careful where you put this key.
+        </p>
+        <div class="notification is-danger">
+          This API key allows full access to you account and wallet. Be careful
+          where you use this key and where and how you store it.
+
+          Ideally, this key should be ONLY used on the server side, <b>don't give
+          other people source code or any type of application with this key included!</b>
+
+          You have been warned.
+
+          <br><br>
+
+          <i>If you need to revoke your current key, click Disable API below, then
+          enable again to get a new key.</i>
+        </div>
+        <p class="content">
+          <i>The UI for enabling/disabling the API is far from finished. You'll get
+          a JSON object back when you enable or disable which shows the status on
+          your account. <code>ok</code> is true if the operation succeeded, <code>enabled</code> is true
+          if you have the API enabled, <code>key</code> is the API key that you use.</i>
+        </p>
+        <p class="content">
+          <a href="/api/enable" class="button is-success">Enable API</a>
+          <a href="/api/disable" class="button is-danger">Disable API</a>
+          <a href="/api/status" class="button is-dark">API Status</a>
+        </p>
+      </div>
+    </section>
+
+    <%- include("partials/js"); %>
+  </body>
+</html>
