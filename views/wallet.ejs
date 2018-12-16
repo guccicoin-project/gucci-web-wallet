@@ -119,6 +119,7 @@
           <div class="card">
             <div class="card-content">
               <h5 class="title is-4">Send</h5>
+              <button class="button is-dark" onClick="startScan()" style="margin-bottom: 1em;">Scan QR</button>
               <form action="/wallet/sendtransaction" method="POST">
                 <div class="field">
                   <label class="label">Recipient</label>
@@ -167,10 +168,123 @@
       </div>
     </section>
 
+    <div id="qr-modal" class="modal">
+      <div class="modal-background"></div>
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Scan Transaction QR</p>
+          <button class="delete" aria-label="close" onClick="stopScan()"></button>
+        </header>
+        <section class="modal-card-body">
+          <video id="qr-preview"></video>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button" onClick="stopScan()">Cancel</button>
+        </footer>
+      </div>
+    </div>
+
     <%- include("partials/js"); %>
+    <script src="https://github.com/schmich/instascan/releases/download/1.0.0/instascan.min.js"></script>
+    <script>
+      let scanner = new Instascan.Scanner({
+        video: document.getElementById('qr-preview')
+      });
+
+      scanner.addListener('scan', function(content) {
+        // Get rid of the content in the fields.
+        clearSend()
+
+        // *NEW* Guccicoin QR codes
+        if (content.startsWith("guccicoin:gucci")) {
+          // Create a URI parser using an 'a' element
+          var parser = document.createElement('a');
+
+          // Set the URI of the 'a' element to content.
+          parser.href = content;
+
+          // Set the value of the recipient field to the pathname (i.e address)
+          $("#sendRecipient").val(parser.pathname);
+          
+          // Parse the query string.
+          var query = parseQuery(parser.search);
+
+          // If we have an amount in the query
+          if (query.amount) {
+            // Set the value of the amount field to the amount.
+            $("#sendAmount").val(query.amount);
+          }
+
+          // If we have a payment ID.
+          if (query.id) {
+            // Set the value of the id field to the id.
+            $("#sendId").val(query.id);
+          }
+
+          // Get rid of the parser element
+          parser.remove();
+
+        // Plain Guccicoin QR
+        } else if (content.startsWith("gucci")) {
+          $("#sendRecipient").val(content);
+        } else {
+          // Or just return that it was a bad QR
+          return invalidScan();
+        }
+
+        validate();
+
+        // Clean up the QR scanner.
+        stopScan();
+      });
+
+      function invalidScan() {
+        stopScan();
+        alert("Invalid transaction QR!");
+      }
+
+      function startScan() {
+        // Search for cameras that we are allowed to access.
+        Instascan.Camera.getCameras().then(function (cameras) {
+          // If we have cameras.
+          if (cameras.length > 0) {
+            // Show the modal.
+            $("#qr-modal").addClass("is-active");
+            // Start the scanner.
+            scanner.start(cameras[0]);
+          } else {
+            // Tell the user that we can't use any cameras.
+            alert("No cameras could be found to scan QR codes.");
+          }
+        }).catch(function(e) {
+          // Print error to console and user.
+          alert("There was a problem while detecting cameras!");
+          console.error(e);
+        });
+      }
+
+      function stopScan() {
+        // Stop the scanner
+        scanner.stop().then(function() {
+          // Hide the qr modal.
+          $("#qr-modal").removeClass("is-active");
+        });
+      }
+
+      function parseQuery(queryString) {
+        var query = {};
+        var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+        for (var i = 0; i < pairs.length; i++) {
+          var pair = pairs[i].split('=');
+          query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+        }
+        return query;
+      }
+    </script>
+
     <script>
       var receiveQr = new QRCode(document.getElementById("receiveQr"), {
-        text: "<%= wallet.walletAddress %>"
+        text: "guccicoin:<%= wallet.walletAddress %>"
       });
 
       function clearSend() {

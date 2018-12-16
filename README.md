@@ -154,3 +154,20 @@ mixin: 3
 ```
 * `hash` - transaction hash
 </details>
+
+## Using compatible QR codes
+If you want to make transaction QR codes compatible with the guccicoin wallet. Use the following formatting:
+
+### Content
+#### Example
+![](https://vgy.me/M1V28u.png)
+```
+guccicoin:gucci3VA3eMd62N4DXM77M4K9FhPuLjW5VEMNmY8zdoSG8BUStCLsH6ZUK6LKTXrWzHbgLwxkF6oANLkd7NiTawtaBDG3n1P59W1p?amount=50&id=bf7b9b35651428412255ae131e64e9b98bee9d02e4b466fa022903ec7830c6d0
+```
+#### Parts
+The QR code content is structured like a URI. You need a `guccicoin:` protocol and then an address and optional query parameters.
+* `guccicoin:` - The **Protocol** **[required]**
+* `gucci3VA3...9W1p` - The **Address** to send funds to
+* `?` - The **Query**. You need this for any parts after. *[optional]*
+* `amount=50` - The **Amount** to send.
+* `id=bf7b...c6d0` - The **Payment ID**.
