@@ -176,7 +176,10 @@
           <button class="delete" aria-label="close" onClick="stopScan()"></button>
         </header>
         <section class="modal-card-body">
-          <video id="qr-preview"></video>
+          <p id="qr-loading">
+            <i class="fas fa-cog fa-spin"></i> Loading QR Scanner...
+          </p>
+          <canvas id="qr-canvas" hidden></canvas>
         </section>
         <footer class="modal-card-foot">
           <button class="button" onClick="stopScan()">Cancel</button>
@@ -185,15 +188,42 @@
     </div>
 
     <%- include("partials/js"); %>
-    <script type="text/javascript" src="https://cdn.staticaly.com/gist/chris-gunawardena/15d507d11dc09ef8f7653f1005eda203/raw/9ee3e38c57f2b1b7dc034fcf4c0dc48a2126a67c/instascan.min.js"></script>
-    <script>
-      let scanner = new Instascan.Scanner({
-        video: document.getElementById('qr-preview')
-      });
 
-      scanner.addListener('scan', function(content) {
+    <!-- QR SCANNER JAVASCRIPT -->
+    <script src="https://cdn.staticaly.com/gh/cozmo/jsQR/92217b76/dist/jsQR.js"></script>
+    <script>
+      var video = document.createElement("video");
+      var track;
+      var canvasElement = document.getElementById("qr-canvas");
+      var canvas = canvasElement.getContext("2d");
+      var doTicks = false;
+
+      function tick() {
+        $("#qr-loading").show();
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          $("#qr-loading").hide();
+          canvasElement.hidden = false;
+          
+          canvasElement.height = video.videoHeight;
+          canvasElement.width = video.videoWidth;
+          canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+          var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+          var code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          if (code) {
+            parse(code.data);
+          }
+        }
+
+        if (doTicks) {
+          requestAnimationFrame(tick);
+        }
+      }
+
+      function parse(content) {
         // Get rid of the content in the fields.
-        clearSend()
+        clearSend();
 
         // *NEW* Guccicoin QR codes
         if (content.startsWith("guccicoin:gucci")) {
@@ -236,7 +266,7 @@
 
         // Clean up the QR scanner.
         stopScan();
-      });
+      }
 
       function invalidScan() {
         stopScan();
@@ -244,31 +274,35 @@
       }
 
       function startScan() {
-        // Search for cameras that we are allowed to access.
-        Instascan.Camera.getCameras().then(function (cameras) {
-          // If we have cameras.
-          if (cameras.length > 0) {
-            // Show the modal.
-            $("#qr-modal").addClass("is-active");
-            // Start the scanner.
-            scanner.start(cameras[0]);
-          } else {
-            // Tell the user that we can't use any cameras.
-            alert("No cameras could be found to scan QR codes.");
-          }
+        navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "environment"
+          },
+          audio: false
+        }).then(function(stream) {
+          video.srcObject = stream;
+          video.setAttribute("playsinline", true);
+          video.play();
+          track = stream.getTracks()[0];
+          doTicks = true;
+          requestAnimationFrame(tick);
+          $("#qr-modal").addClass("is-active");
         }).catch(function(e) {
-          // Print error to console and user.
-          alert("There was a problem while detecting cameras!");
           console.error(e);
+          alert("There was a problem while trying to access a camera to use for scanning QR codes.");
         });
       }
 
       function stopScan() {
-        // Stop the scanner
-        scanner.stop().then(function() {
-          // Hide the qr modal.
-          $("#qr-modal").removeClass("is-active");
-        });
+        if (track) {
+          if (track.stop) {
+            track.stop();
+          }
+          track = null;
+        }
+        doTicks = false;
+        canvasElement.hidden = true;
+        $("#qr-modal").removeClass("is-active");
       }
 
       function parseQuery(queryString) {
@@ -282,6 +316,7 @@
       }
     </script>
 
+    <!-- WALLET QR GENERATION JAVASCRIPT -->
     <script>
       var receiveQr = new QRCode(document.getElementById("receiveQr"), {
         text: "guccicoin:<%= wallet.walletAddress %>"
@@ -295,6 +330,7 @@
       }
     </script>
 
+    <!-- SEND VALIDATION JAVASCRIPT -->
     <script>
       var recipientValid = false;
       var amountValid = false;
