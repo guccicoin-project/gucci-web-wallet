@@ -102,7 +102,7 @@ router.post("/sendtransaction", requireWallet(), (req, res) => {
         res.locals.wallet.walletAddress,
       ],
       changeAddress: res.locals.wallet.walletAddress,
-      mixin: 0,
+      mixin: parseInt(process.env.SERVICE_MIXIN || 0),
       paymentId: req.body.sendId,
     });
   }).then((txResult) => res.send(`Transaction: ${JSON.stringify(txResult)}`)).catch((e) => {
