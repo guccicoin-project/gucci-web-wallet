@@ -6,6 +6,8 @@ const mw = require("../middleware/api");
 const promiseify = require("just-promiseify");
 const helpers = require("../helpers/wallet-helpers");
 
+const defaultBlockCount = parseInt(process.env.SERVICE_BLOCK_COUNT || 1000);
+
 const router = express.Router();
 
 router.use((req, res, next) => {
@@ -242,7 +244,7 @@ router.get("/transactions", mw.headerRequired(), mw.walletRequired(), (req, res)
     addresses: [
       req.wallet.walletAddress,
     ],
-    blockCount: 1000,
+    blockCount: defaultBlockCount,
   };
 
   if (req.query.id) {
@@ -257,7 +259,7 @@ router.get("/transactions", mw.headerRequired(), mw.walletRequired(), (req, res)
   }
 
   req.app.locals.daemon.getBlockCount().then((count) => {
-    let start = count - 1000;
+    let start = count - defaultBlockCount;
     start = start <= 0 ? 1 : start;
     txoptions.firstBlockIndex = start;
     return req.app.locals.service.getTransactions(txoptions);
