@@ -6,6 +6,9 @@ const helpers = require("../helpers/wallet-helpers");
 const router = express.Router();
 const secured = require("../middleware/secured");
 
+const defaultMixin = parseInt(process.env.SERVICE_MIXIN || 0);
+const defaultBlockCount = parseInt(process.env.SERVICE_BLOCK_COUNT || 1000)
+
 router.use(secured(), (req, res, next) => {
   if (!req.user) {
     res.locals.wallet = null;
@@ -40,7 +43,7 @@ router.get("/", requireWallet(), (req, res) => {
     addresses: [
       res.locals.wallet.walletAddress,
     ],
-    blockCount: 1000,
+    blockCount: defaultBlockCount,
   };
   req.app.locals.service.getBalance({
     address: res.locals.wallet.walletAddress,
@@ -48,7 +51,7 @@ router.get("/", requireWallet(), (req, res) => {
     balance = result;
     return req.app.locals.daemon.getBlockCount();
   }).then((count) => {
-    let start = count - 1000;
+    let start = count - defaultBlockCount;
     start = start <= 0 ? 1 : start;
     txoptions.firstBlockIndex = start;
     return req.app.locals.service.getTransactions(txoptions);
@@ -102,7 +105,7 @@ router.post("/sendtransaction", requireWallet(), (req, res) => {
         res.locals.wallet.walletAddress,
       ],
       changeAddress: res.locals.wallet.walletAddress,
-      mixin: parseInt(process.env.SERVICE_MIXIN || 0),
+      mixin: defaultMixin,
       paymentId: req.body.sendId,
     });
   }).then((txResult) => res.send(`Transaction: ${JSON.stringify(txResult)}`)).catch((e) => {
