@@ -12,3 +12,10 @@ module.exports.validAmount = (amt, bal) => (amt < bal) && (amt > 0);
 module.exports.validFee = (fee, amt, bal) => ((amt + fee) < bal) && (fee >= 0.1);
 
 module.exports.validId = (id) => id === "" || (id.length === 64 && this.isHex(id));
+
+module.exports.formatBalance = (bal) => {
+  let output = parseFloat(bal);
+  output = parseFloat(Math.round(output * 100) / 100).toFixed(2);
+  output = output.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return output + " GCX";
+};

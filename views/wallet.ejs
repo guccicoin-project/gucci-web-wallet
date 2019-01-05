@@ -3,6 +3,38 @@
   <head>
     <%- include("partials/meta"); %>
     <%- include("partials/css"); %>
+    <style>
+      .tx-part {
+        display: block;
+      }
+
+      .table-wrapper {
+        overflow-y: scroll;
+        height: 500px;
+
+        font-size: 0.8em;
+      }
+
+      .table-wrapper table {
+        width: 100%;
+      }
+
+      .tx-amount {
+        background: #000;
+        color: #fff;
+        text-align: right;
+        padding: 5px;
+        border-radius: 5px;
+      }
+
+      .tx-amount.positive {
+        background: hsl(141, 71%, 48%);
+      }
+
+      .tx-amount.negative {
+        background: hsl(348, 100%, 61%);
+      }
+    </style>
 
     <title>Wallet - Guccicoin Web Wallet</title>
   </head>
@@ -21,7 +53,7 @@
                 <%= user.nickname %>'s Wallet
               </h1>
               <h2 class="subtitle">
-                <%= balance.availableBalance %> GCX
+                <%= helpers.formatBalance(balance.availableBalance) %>
               </h2>
               <div id="wallet-nav">
                 <a href="/wallet/settings" class="button is-light">Wallet Settings</a>
@@ -47,21 +79,21 @@
                     Available Balance:
                   </dt>
                   <dd>
-                    <b><%= balance.availableBalance %> GCX</b>
+                    <b><%= helpers.formatBalance(balance.availableBalance) %></b>
                   </dd>
                   <dt class="has-text-grey-light">
                     <span class="icon"><i class="fas fa-question-circle fa-fw"></i></span>
                     Unconfirmed Balance:
                   </dt>
                   <dd class="has-text-grey-light">
-                    <i><%= balance.lockedAmount %> GCX</i>
+                    <i><%= helpers.formatBalance(balance.lockedAmount) %></i>
                   </dd>
                   <dt class="has-text-grey-light">
                     <span class="icon"><i class="fas fa-circle fa-fw"></i></span>
                     Total Balance:
                   </dt>
                   <dd class="has-text-grey-light">
-                    <i><%= Math.round((parseFloat(balance.lockedAmount) + parseFloat(balance.availableBalance)) * 100) / 100 %> GCX</i>
+                    <i><%= helpers.formatBalance(Math.round((parseFloat(balance.lockedAmount) + parseFloat(balance.availableBalance)) * 100) / 100) %></i>
                   </dd>
                 </dl>
               </div>
@@ -72,35 +104,56 @@
           <div class="card">
             <div class="card-content">
               <h5 class="title is-4">Transactions</h5>
-              <p class="has-text-info">
-                This needs to be improved. Single transactions may show up more than once on this table and may show incorrectly
-                as in/out.
+              <p class="has-text-info content">
+                <i class="fas fa-info-circle fa-fw"></i> Only transactions in the last <%= parseInt(process.env.SERVICE_BLOCK_COUNT || 1000) %> blocks are shown.
               </p>
-              <p class="has-text-info">
-                Only transactions in the last 1000 blocks are shown.
-              </p>
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>In/Out</th>
-                    <th>To/From</th>
-                    <th>Total Amount</th>
-                    <th>Date</th>
-                    <th>Extra</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% transactions.forEach((tx) => { %>
-                    <tr>
-                      <th><%= tx.inbound ? "In" : "Out" %></th>
-                      <td><%= tx.address.substring(0, 10); %>...</td>
-                      <td><%= tx.amount %></td>
-                      <td><%= moment.unix(tx.timestamp).fromNow(); %></td>
-                      <td><%= tx.type %></td>
-                    </tr>
-                  <% }); %>
-                </tbody>
-              </table>
+              <div class="table-wrapper">
+                <table class="table table-scroll">
+                  <tbody>
+                    <% transactions.forEach((tx) => { %>
+                      <%
+                        let txtype = "hide";
+                        if (tx.type == 0 && tx.inbound == true && tx.address != wallet.walletAddress) {
+                          txtype = "out";
+                        } else if (tx.type == 0 && tx.inbound == true && tx.address == wallet.walletAddress) {
+                          txtype = "in";
+                        }
+                      %>
+                      <% if (txtype != "hide") { %>
+                        <tr>
+                          <td>
+                            <span class="<%= txtype == 'in' ? 'has-text-success' : 'has-text-danger' %> tx-type tx-part">
+                              <b><%= txtype == 'in' ? 'RECEIVED' : 'SENT' %></b>
+                            </span>
+                            <span class="tx-time tx-part">
+                              <%= moment.unix(tx.timestamp).fromNow(); %>
+                            </span>
+                            <span class="tx-absolute-time tx-part">
+                              <small><i>(<%= moment.unix(tx.timestamp).format('D MMM YY @ HH:mm:ss'); %>)</i></small>
+                            </span>
+                          </td>
+                          <td>
+                            <span class="tx-recipient tx-part">
+                              <b>TO:</b> <%= tx.address.substring(5, 15); %>...<%= tx.address.substring(tx.address.length - 10, tx.address.length); %>
+                            </span>
+                            <span class="tx-hash tx-part">
+                              <b>ID:</b> <%= tx.transactionHash.substring(5, 15); %>...<%= tx.transactionHash.substring(tx.transactionHash.length - 10, tx.transactionHash.length); %>
+                            </span>
+                          </td>
+                          <td>
+                            <span class="tx-amount tx-part <%= txtype == 'in' ? 'positive' : 'negative' %>">
+                              <%= txtype == 'in' ? '+' : '-' %><%= helpers.formatBalance(tx.amount); %>
+                            </span>
+                          </td>
+                          <td>
+                            <a onClick="viewTransaction(<%= JSON.stringify(tx); %>)">View</a>
+                          </td>
+                        </tr>
+                      <% } %>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

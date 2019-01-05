@@ -73,7 +73,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use((req, res, next) => {
   res.locals.authd = (!!req.user);
-
+  res.locals.helpers = require("./helpers/wallet-helpers");
   res.locals.moment = moment;
 
   if (req.user) {

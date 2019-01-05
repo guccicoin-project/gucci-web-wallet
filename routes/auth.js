@@ -2,7 +2,6 @@
 
 const express = require("express");
 const passport = require("passport");
-const secured = require("../middleware/secured");
 
 const router = express.Router();
 
@@ -34,9 +33,9 @@ router.get("/callback", (req, res, next) => {
   })(req, res, next);
 });
 
-router.get("/logout", secured(), (req, res) => {
+router.get("/logout", (req, res) => {
   req.logout();
-  res.redirect("/");
+  res.redirect("https://guccicoin.eu.auth0.com/v2/logout?returnTo=https%3A%2F%2Fwebwallet.guccicoin.cf");
 });
 
 module.exports = router;

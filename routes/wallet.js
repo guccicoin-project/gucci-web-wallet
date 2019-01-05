@@ -7,7 +7,7 @@ const router = express.Router();
 const secured = require("../middleware/secured");
 
 const defaultMixin = parseInt(process.env.SERVICE_MIXIN || 0);
-const defaultBlockCount = parseInt(process.env.SERVICE_BLOCK_COUNT || 1000)
+const defaultBlockCount = parseInt(process.env.SERVICE_BLOCK_COUNT || 1000);
 
 router.use(secured(), (req, res, next) => {
   if (!req.user) {
@@ -131,6 +131,28 @@ router.get("/settings", requireWallet(), (req, res) => {
   }).catch((e) => {
     req.app.locals.log.error(e);
     res.render("error");
+  });
+});
+
+router.get("/tx", (req, res) => {
+  let balance;
+  let transactions;
+  const txoptions = {
+    addresses: [
+      res.locals.wallet.walletAddress,
+    ],
+    blockCount: defaultBlockCount,
+  };
+  req.app.locals.daemon.getBlockCount().then((count) => {
+    let start = count - defaultBlockCount;
+    start = start <= 0 ? 1 : start;
+    txoptions.firstBlockIndex = start;
+    return req.app.locals.service.getTransactions(txoptions);
+  }).then((result) => {
+    transactions = result;
+    return res.json({
+      transactions: transactions.reverse(),
+    });
   });
 });
 
