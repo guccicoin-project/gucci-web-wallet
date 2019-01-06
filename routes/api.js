@@ -48,6 +48,11 @@ router.use((req, res, next) => {
       userId: req.user.id,
     }).then((rows) => {
       req.apikey = rows.length > 0 ? rows[0] : null;
+      return req.app.locals.db("wallets").where({
+        userId: req.user.id,
+      }).limit(1);
+    }).then((rows) => {
+      req.wallet = rows.length > 0 ? rows[0] : null;
       return next();
     }).catch(() => res.json({
       ok: false,
@@ -58,7 +63,7 @@ router.use((req, res, next) => {
   }
 });
 
-router.get("/hello", mw.headerRequired(), (req, res) => {
+router.get("/hello", mw.authRequired(), (req, res) => {
   res.json({
     ok: true,
     hello: "world",
@@ -126,7 +131,7 @@ router.get("/disable", mw.authRequired(), (req, res) => {
 
 // router.get("/info")...
 // <- balance, address
-router.get("/info", mw.headerRequired(), mw.walletRequired(), (req, res) => {
+router.get("/info", mw.authRequired(), mw.walletRequired(), (req, res) => {
   req.app.locals.service.getBalance({
     address: req.wallet.walletAddress,
   }).then((balance) => res.json({
@@ -145,14 +150,14 @@ router.get("/info", mw.headerRequired(), mw.walletRequired(), (req, res) => {
 // router.post("/send")...
 // -> recipient, amount, fee, paymentid, mixin
 // <- transaction id
-router.post("/send", mw.headerRequired(), mw.walletRequired(), (req, res) => {
+router.post("/send", mw.authRequired(), mw.walletRequired(), (req, res) => {
   const txRecipient = req.body.recipient;
   let txAmount = req.body.amount;
   let txFee = req.body.fee;
   const txId = req.body.paymentid;
   let txMixin = req.body.mixin;
 
-  if (!(txRecipient && txAmount && txFee && txMixin)) {
+  if (!(txRecipient && txAmount && txFee && (txMixin === 0 || txMixin))) {
     return res.json({
       ok: false,
       error: "You need to supply 'recipient', 'amount', 'fee', 'paymentid' and 'mixin' in the request body.",
@@ -236,10 +241,10 @@ router.post("/send", mw.headerRequired(), mw.walletRequired(), (req, res) => {
   });
 });
 
-// router.get("/transactions")... (LAST 1000 BLOCKS)
+// router.get("/transactions")...
 // -> (paymentid)
 // <- transactions
-router.get("/transactions", mw.headerRequired(), mw.walletRequired(), (req, res) => {
+router.get("/transactions", mw.authRequired(), mw.walletRequired(), (req, res) => {
   const txoptions = {
     addresses: [
       req.wallet.walletAddress,
@@ -263,11 +268,25 @@ router.get("/transactions", mw.headerRequired(), mw.walletRequired(), (req, res)
     start = start <= 0 ? 1 : start;
     txoptions.firstBlockIndex = start;
     return req.app.locals.service.getTransactions(txoptions);
-  }).then((result) => res.json({
-    ok: true,
-    targeted: (!!req.query.id),
-    transactions: result,
-  })).catch((e) => {
+  }).then((result) => {
+    for (let i = 0; i < result.length; i++) {
+      let type = "hide";
+
+      if (result[i].type === 0 && result[i].inbound === true && result[i].address !== req.wallet.walletAddress) {
+        type = "out";
+      } else if (result[i].type === 0 && result[i].inbound === true && result[i].address === req.wallet.walletAddress) {
+        type = "in";
+      }
+
+      result[i].ctype = type;
+    }
+
+    return res.json({
+      ok: true,
+      targeted: (!!req.query.id),
+      transactions: result,
+    });
+  }).catch((e) => {
     req.app.locals.log.error(e);
     res.json({
       ok: false,

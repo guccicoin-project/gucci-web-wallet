@@ -1,13 +1,9 @@
 "use strict";
 
 const express = require("express");
-const helpers = require("../helpers/wallet-helpers");
 
 const router = express.Router();
 const secured = require("../middleware/secured");
-
-const defaultMixin = parseInt(process.env.SERVICE_MIXIN || 0);
-const defaultBlockCount = parseInt(process.env.SERVICE_BLOCK_COUNT || 1000);
 
 router.use(secured(), (req, res, next) => {
   if (!req.user) {
@@ -37,81 +33,7 @@ function requireWallet() {
 }
 
 router.get("/", requireWallet(), (req, res) => {
-  let balance;
-  let transactions;
-  const txoptions = {
-    addresses: [
-      res.locals.wallet.walletAddress,
-    ],
-    blockCount: defaultBlockCount,
-  };
-  req.app.locals.service.getBalance({
-    address: res.locals.wallet.walletAddress,
-  }).then((result) => {
-    balance = result;
-    return req.app.locals.daemon.getBlockCount();
-  }).then((count) => {
-    let start = count - defaultBlockCount;
-    start = start <= 0 ? 1 : start;
-    txoptions.firstBlockIndex = start;
-    return req.app.locals.service.getTransactions(txoptions);
-  }).then((result) => {
-    transactions = result;
-    return res.render("wallet", {
-      balance,
-      transactions: transactions.reverse(),
-    });
-  }).catch((e) => {
-    req.app.locals.log.error(e);
-    res.render("error");
-  });
-});
-
-router.post("/sendtransaction", requireWallet(), (req, res) => {
-  const sendAmount = parseFloat(req.body.sendAmount);
-  const sendFee = parseFloat(req.body.sendFee);
-
-  if (!helpers.validAddress(req.body.sendRecipient)) {
-    res.send("Invalid recipient address");
-    return;
-  }
-
-  if (!helpers.validId(req.body.sendId)) {
-    res.send("Invalid payment ID");
-    return;
-  }
-
-  req.app.locals.service.getBalance({
-    address: res.locals.wallet.walletAddress,
-  }).then((result) => {
-    const bal = result.availableBalance;
-
-    if (!helpers.validAmount(sendAmount, bal)) {
-      res.send("Invalid amount");
-      return;
-    }
-
-    if (!helpers.validFee(sendFee, sendAmount, bal)) {
-      res.send("Invalid fee");
-      return;
-    }
-
-    return req.app.locals.service.sendTransaction({
-      transfers: [
-        req.app.locals.service.newTransfer(req.body.sendRecipient, sendAmount),
-      ],
-      fee: sendFee,
-      addresses: [
-        res.locals.wallet.walletAddress,
-      ],
-      changeAddress: res.locals.wallet.walletAddress,
-      mixin: defaultMixin,
-      paymentId: req.body.sendId,
-    });
-  }).then((txResult) => res.send(`Transaction: ${JSON.stringify(txResult)}`)).catch((e) => {
-    req.app.locals.log.error(e);
-    res.render("error");
-  });
+  return res.render("wallet");
 });
 
 router.get("/settings", requireWallet(), (req, res) => {
@@ -131,28 +53,6 @@ router.get("/settings", requireWallet(), (req, res) => {
   }).catch((e) => {
     req.app.locals.log.error(e);
     res.render("error");
-  });
-});
-
-router.get("/tx", (req, res) => {
-  let balance;
-  let transactions;
-  const txoptions = {
-    addresses: [
-      res.locals.wallet.walletAddress,
-    ],
-    blockCount: defaultBlockCount,
-  };
-  req.app.locals.daemon.getBlockCount().then((count) => {
-    let start = count - defaultBlockCount;
-    start = start <= 0 ? 1 : start;
-    txoptions.firstBlockIndex = start;
-    return req.app.locals.service.getTransactions(txoptions);
-  }).then((result) => {
-    transactions = result;
-    return res.json({
-      transactions: transactions.reverse(),
-    });
   });
 });
 

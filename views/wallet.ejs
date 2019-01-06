@@ -3,181 +3,150 @@
   <head>
     <%- include("partials/meta"); %>
     <%- include("partials/css"); %>
-    <style>
-      .tx-part {
-        display: block;
-      }
-
-      .table-wrapper {
-        overflow-y: scroll;
-        height: 500px;
-
-        font-size: 0.8em;
-      }
-
-      .table-wrapper table {
-        width: 100%;
-      }
-
-      .tx-amount {
-        background: #000;
-        color: #fff;
-        text-align: right;
-        padding: 5px;
-        border-radius: 5px;
-      }
-
-      .tx-amount.positive {
-        background: hsl(141, 71%, 48%);
-      }
-
-      .tx-amount.negative {
-        background: hsl(348, 100%, 61%);
-      }
-    </style>
+    <link href="https://unpkg.com/vue-qrcode-reader/dist/vue-qrcode-reader.css" rel="stylesheet">
 
     <title>Wallet - Guccicoin Web Wallet</title>
   </head>
   <body>
     <%- include("partials/nav"); %>
 
-    <section class="hero is-primary">
-      <div class="hero-body">
-        <section class="media">
-          <figure class="media-left">
-            <svg width="80" height="80" data-jdenticon-value="<%= wallet.walletAddress %>" style="border-radius: 2px;"></svg>
-          </figure>
-          <div class="media-content">
-            <div class="content">
-              <h1 class="title">
-                <%= user.nickname %>'s Wallet
-              </h1>
-              <h2 class="subtitle">
-                <%= helpers.formatBalance(balance.availableBalance) %>
-              </h2>
-              <div id="wallet-nav">
-                <a href="/wallet/settings" class="button is-light">Wallet Settings</a>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </section>
-
-    <%- include("partials/alerts"); %>
-
-    <section class="section">
-      <div class="columns is-multiline">
-        <div class="column is-one-third">
-          <div class="card">
-            <div class="card-content">
-              <h5 class="title is-4">Balance</h5>
+    <div id="app">
+      <section class="hero is-primary">
+        <div class="hero-body">
+          <section class="media">
+            <figure class="media-left">
+              <svg id="address-jdenticon" width="80" height="80" :data-jdenticon-value="address" style="border-radius: 2px;"></svg>
+            </figure>
+            <div class="media-content">
               <div class="content">
-                <dl class="fa-list">
-                  <dt>
-                    <span class="icon has-text-success"><i class="fas fa-check-circle fa-fw"></i></span>
-                    Available Balance:
-                  </dt>
-                  <dd>
-                    <b><%= helpers.formatBalance(balance.availableBalance) %></b>
-                  </dd>
-                  <dt class="has-text-grey-light">
-                    <span class="icon"><i class="fas fa-question-circle fa-fw"></i></span>
-                    Unconfirmed Balance:
-                  </dt>
-                  <dd class="has-text-grey-light">
-                    <i><%= helpers.formatBalance(balance.lockedAmount) %></i>
-                  </dd>
-                  <dt class="has-text-grey-light">
-                    <span class="icon"><i class="fas fa-circle fa-fw"></i></span>
-                    Total Balance:
-                  </dt>
-                  <dd class="has-text-grey-light">
-                    <i><%= helpers.formatBalance(Math.round((parseFloat(balance.lockedAmount) + parseFloat(balance.availableBalance)) * 100) / 100) %></i>
-                  </dd>
-                </dl>
+                <h1 class="title">
+                  <%= user.nickname %>'s Wallet
+                </h1>
+                <h2 class="subtitle" style="margin-bottom: 0;">
+                  {{ balance.availableBalance | formatAmountShort }}
+                </h2>
+                <p>
+                  <i>{{ balance.availableBalance | formatAmount }}</i>
+                </p>
+                <div id="wallet-nav">
+                  <a v-on:click="update()" class="button is-light">Force Update</a>
+                  <a href="/wallet/settings" class="button is-light">Wallet Settings</a>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section v-if="!updateSuccess" id="alerts" class="section" style="padding-top: 24px; padding-bottom: 24px;">
+        <div class="notification is-danger">
+          <button class="delete" v-on:click="updateSuccess = true"></button>
+          <b>Uh oh!</b> There's a problem grabbing your wallet information from the server. Please make sure that you
+          have a working internet connection and try again. If the problem persists there could be a problem with the server.
+        </div>
+      </section>
+
+      <%- include("partials/alerts"); %>
+
+      <section class="section">
+        <div class="columns is-multiline">
+          <div class="column is-one-third">
+            <div class="card">
+              <div class="card-content">
+                <h5 class="title is-4">Balance</h5>
+                <div class="content">
+                  <dl>
+                    <dt>
+                      <span class="icon has-text-success"><i class="fas fa-check-circle fa-fw"></i></span>
+                      Available Balance:
+                    </dt>
+                    <dd>
+                      <b>{{ balance.availableBalance | formatAmount }}</b>
+                    </dd>
+                    <dt class="has-text-grey-light">
+                      <span class="icon"><i class="fas fa-question-circle fa-fw"></i></span>
+                      Unconfirmed Balance:
+                    </dt>
+                    <dd class="has-text-grey-light">
+                      <i>{{ balance.lockedAmount | formatAmount }}</i>
+                    </dd>
+                    <dt class="has-text-grey-light">
+                      <span class="icon"><i class="fas fa-circle fa-fw"></i></span>
+                      Total Balance:
+                    </dt>
+                    <dd class="has-text-grey-light">
+                      <i>{{ (balance.availableBalance + balance.lockedAmount) | formatAmount }}</i>
+                    </dd>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="column is-two-thirds">
-          <div class="card">
-            <div class="card-content">
-              <h5 class="title is-4">Transactions</h5>
-              <p class="has-text-info content">
-                <i class="fas fa-info-circle fa-fw"></i> Only transactions in the last <%= parseInt(process.env.SERVICE_BLOCK_COUNT || 1000) %> blocks are shown.
-              </p>
-              <div class="table-wrapper">
-                <table class="table table-scroll">
+
+          <div class="column is-two-thirds">
+            <div class="card">
+              <div class="card-content">
+                <h5 class="title is-4">Transactions</h5>
+                <p class="has-text-info content">
+                  <i class="fas fa-info-circle fa-fw"></i> Only transactions in the last <%= parseInt(process.env.SERVICE_BLOCK_COUNT || 1000) %> blocks are shown.
+                </p>
+                
+                <table class="table is-striped is-hoverable is-fullwidth">
                   <tbody>
-                    <% transactions.forEach((tx) => { %>
-                      <%
-                        let txtype = "hide";
-                        if (tx.type == 0 && tx.inbound == true && tx.address != wallet.walletAddress) {
-                          txtype = "out";
-                        } else if (tx.type == 0 && tx.inbound == true && tx.address == wallet.walletAddress) {
-                          txtype = "in";
-                        }
-                      %>
-                      <% if (txtype != "hide") { %>
-                        <tr>
-                          <td>
-                            <span class="<%= txtype == 'in' ? 'has-text-success' : 'has-text-danger' %> tx-type tx-part">
-                              <b><%= txtype == 'in' ? 'RECEIVED' : 'SENT' %></b>
-                            </span>
-                            <span class="tx-time tx-part">
-                              <%= moment.unix(tx.timestamp).fromNow(); %>
-                            </span>
-                            <span class="tx-absolute-time tx-part">
-                              <small><i>(<%= moment.unix(tx.timestamp).format('D MMM YY @ HH:mm:ss'); %>)</i></small>
-                            </span>
-                          </td>
-                          <td>
-                            <span class="tx-recipient tx-part">
-                              <b>TO:</b> <%= tx.address.substring(5, 15); %>...<%= tx.address.substring(tx.address.length - 10, tx.address.length); %>
-                            </span>
-                            <span class="tx-hash tx-part">
-                              <b>ID:</b> <%= tx.transactionHash.substring(5, 15); %>...<%= tx.transactionHash.substring(tx.transactionHash.length - 10, tx.transactionHash.length); %>
-                            </span>
-                          </td>
-                          <td>
-                            <span class="tx-amount tx-part <%= txtype == 'in' ? 'positive' : 'negative' %>">
-                              <%= txtype == 'in' ? '+' : '-' %><%= helpers.formatBalance(tx.amount); %>
-                            </span>
-                          </td>
-                          <td>
-                            <a onClick="viewTransaction(<%= JSON.stringify(tx); %>)">View</a>
-                          </td>
-                        </tr>
-                      <% } %>
-                    <% }); %>
+                    <tr v-on:click="currentTransaction = tx" v-for="tx in paginatedData">
+                      <td>
+                        <p>
+                          <b>
+                            <i v-if="tx.ctype == 'in'" class="fas fa-chevron-down fa-fw"></i>
+                            <i v-if="tx.ctype == 'out'" class="fas fa-chevron-up fa-fw"></i>
+                            {{ tx.ctype == 'in' ? 'Received' : 'Sent' }}
+                          </b>
+                        </p>
+                        <p>
+                          {{ tx.timestamp | moment("calendar") }}
+                        </p>
+                      </td>
+                      <td style="text-align: right;">
+                        <span v-if="tx.ctype == 'in'" class="tag is-success is-medium">+{{ tx.amount | formatAmountShort }}</span>
+                        <span v-if="tx.ctype == 'out'" class="tag is-danger is-medium">-{{ tx.amount | formatAmountShort }}</span>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
+
+                <p>Page {{ transactionPage + 1 }} of {{ pageCount }}</p>
+
+                <a class="button is-primary" v-on:click="transactionPage--" v-if="transactionPage > 0"><i class="fas fa-chevron-left fa-fw"></i></a>
+                <a class="button is-primary" v-on:click="transactionPage++" v-if="transactionPage < (pageCount - 1)"><i class="fas fa-chevron-right fa-fw"></i></a>
+
               </div>
             </div>
           </div>
-        </div>
-        <div class="column is-half">
-          <div class="card">
-            <div class="card-content">
-              <h5 class="title is-4">Receive</h5>
-              <center id="receiveQr" class="content"></center>
-              <p class="content">
-                <pre><code><%= wallet.walletAddress %></code></pre>
-              </p>
+
+          <div class="column is-half">
+            <div class="card">
+              <div class="card-content">
+                <h5 class="title is-4">Receive</h5>
+                <center>
+                  <qrcode :value="address"></qrcode>
+                </center>
+                <p class="content">
+                  <pre><code>{{ address }}</code></pre>
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="column is-half">
-          <div class="card">
-            <div class="card-content">
-              <h5 class="title is-4">Send</h5>
-              <button class="button is-dark" onClick="startScan()" style="margin-bottom: 1em;">Scan QR</button>
-              <form action="/wallet/sendtransaction" method="POST">
+
+          <div class="column is-half">
+            <div class="card">
+              <div class="card-content">
+                <h5 class="title is-4">Send</h5>
+                <a class="button is-dark" v-on:click="scanning = true" style="margin-bottom: 1em;">Scan QR</a>
+
                 <div class="field">
                   <label class="label">Recipient</label>
                   <div class="control">
-                    <input id="sendRecipient" name="sendRecipient" class="input is-danger" type="text" placeholder="gucci3URv8AdD8UPR6YUKg7Vj3ThLP1Pn2RmkKoJMVWrc5erW4X1CPG3QsLPqJoe29Z8nr8jaRotjdF36aVaMMPV3JXyeUdrc772y" required>
+                    <input v-model="transaction.recipient" class="input" type="text" placeholder="gucci3URv8AdD8UPR6YUKg7Vj3ThLP1Pn2RmkKoJMVWrc5erW4X1CPG3QsLPqJoe29Z8nr8jaRotjdF36aVaMMPV3JXyeUdrc772y">
                   </div>
                   <p class="help">The public address of the person that you are sending guccicoin to.</p>
                 </div>
@@ -185,7 +154,7 @@
                 <div class="field">
                   <label class="label">Amount</label>
                   <div class="control">
-                    <input id="sendAmount" name="sendAmount" class="input is-danger" type="number" placeholder="10000.00" min="0" max="<%= balance.availableBalance %>" required>
+                    <input v-model="transaction.amount" class="input" type="number" min="0" :max="balance.availableBalance">
                   </div>
                   <p class="help">The amount of guccicoin that the recipient will receive.</p>
                 </div>
@@ -193,7 +162,7 @@
                 <div class="field">
                   <label class="label">Fee</label>
                   <div class="control">
-                    <input id="sendFee" name="sendFee" class="input is-danger" type="number" value="0.1" min="0.1" step="0.1" max="<%= balance.availableBalance %>" required>
+                    <input v-model="transaction.fee" class="input" type="number" min="0.1" step="0.1" :max="balance.availableBalance">
                   </div>
                   <p class="help">The amount of guccicoin that is used to process the transaction. A higher fee will get your transaction through the network faster. <i>(min 0.1)</i></p>
                 </div>
@@ -201,244 +170,357 @@
                 <div class="field">
                   <label class="label">Payment ID</label>
                   <div class="control">
-                    <input id="sendId" name="sendId" class="input is-danger" type="text" placeholder="31f4a2317220780e4bb3e7630455efed91114d2a8b525cfbb0510dd6bc09b43d">
+                    <input v-model="transaction.id" class="input" type="text" placeholder="31f4a2317220780e4bb3e7630455efed91114d2a8b525cfbb0510dd6bc09b43d">
                   </div>
                   <p class="help">If your recipient gives you a Payment ID put it here (otherwise leave it blank). This is usually used for automated wallets.</p>
                 </div>
 
+                <div class="field">
+                  <label class="label">Mixin</label>
+                  <div class="control">
+                    <input v-model="transaction.mixin" class="input" type="number" min="0" max="7" step="1">
+                  </div>
+                  <p class="help">The mixin changes how private your transaction is. A mixin of 0 will have little privacy and a mixin of 7 will have the maximum privacy.</p>
+                </div>
+
                 <div class="field is-grouped">
                   <div class="control">
-                    <button type="submit" class="button is-link" id="sendButton" disabled>Send</button>
+                    <a class="button is-link" v-on:click="send()">Send</a>
                   </div>
                   <div class="control">
-                    <button class="button is-text" onClick="clearSend()">Clear</button>
+                    <a class="button is-text" v-on:click="transaction = { recipient: '', amount: 0, fee: 0.1, id: '', mixin: 0 }">Clear</a>
                   </div>
                 </div>
-              </form>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
 
-    <div id="qr-modal" class="modal">
-      <div class="modal-background"></div>
-      <div class="modal-card">
-        <header class="modal-card-head">
-          <p class="modal-card-title">Scan Transaction QR</p>
-          <button class="delete" aria-label="close" onClick="stopScan()"></button>
-        </header>
-        <section class="modal-card-body">
-          <p id="qr-loading">
-            <i class="fas fa-cog fa-spin"></i> Loading QR Scanner...
-          </p>
-          <canvas id="qr-canvas" hidden></canvas>
-        </section>
-        <footer class="modal-card-foot">
-          <button class="button" onClick="stopScan()">Cancel</button>
-        </footer>
+          <div id="qr-modal" v-bind:class="{ modal: true, 'is-active': scanning }">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                <p class="modal-card-title">Scan Transaction QR</p>
+                <button class="delete" aria-label="close" v-on:click="scanning = false"></button>
+              </header>
+              <section class="modal-card-body">
+                <qrcode-stream v-if="scanning" :track="false" @decode="qrDecode" @init="qrInit"/>
+              </section>
+              <footer class="modal-card-foot">
+                <a class="button" v-on:click="scanning = false">Cancel</a>
+              </footer>
+            </div>
+          </div>
+
+          <div id="transaction-modal" v-bind:class="{ modal: true, 'is-active': currentTransaction }">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                <p class="modal-card-title">Transaction</p>
+                <button class="delete" aria-label="close" v-on:click="currentTransaction = false"></button>
+              </header>
+              <section class="modal-card-body" style="padding: 0;">
+                <table class="table is-striped is-fullwidth">
+                  <tbody>
+                    <tr>
+                      <th>
+                        <i class="fas fa-fingerprint fa-fw"></i>
+                        Transaction ID
+                      </th>
+                      <td><small>{{ currentTransaction.transactionHash }}</small></td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-hashtag fa-fw"></i>
+                        Payment ID
+                      </th>
+                      <td><small>{{ currentTransaction.paymentId }}</small></td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-calendar-alt fa-fw"></i>
+                        Timestamp
+                      </th>
+                      <td>{{ currentTransaction.timestamp }}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-user fa-fw"></i>
+                        Recipient
+                      </th>
+                      <td><small>{{ currentTransaction.address }}</small></td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-money-bill-alt fa-fw"></i>
+                        Amount
+                      </th>
+                      <td>{{ currentTransaction.amount | formatAmount }}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-arrows-alt-v fa-fw"></i>
+                        Block #
+                      </th>
+                      <td>{{ currentTransaction.blockIndex }}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-arrows-alt-v fa-fw"></i>
+                        Block ID
+                      </th>
+                      <td><small>{{ currentTransaction.blockHash }}</small></td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-equals fa-fw"></i>
+                        Total Transaction Amount
+                      </th>
+                      <td>{{ currentTransaction.transactionAmount | formatAmount }}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-hand-holding-usd fa-fw"></i>
+                        Fee
+                      </th>
+                      <td>{{ currentTransaction.fee | formatAmount }}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-clock fa-fw"></i>
+                        Unlock Time
+                      </th>
+                      <td>{{ currentTransaction.unlockTime }}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-database fa-fw"></i>
+                        Is Base?
+                      </th>
+                      <td>{{ currentTransaction.isBase ? 'Yes' : 'No' }}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-question-circle fa-fw"></i>
+                        State
+                      </th>
+                      <td>{{ currentTransaction.state }}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-question-circle fa-fw"></i>
+                        Type
+                      </th>
+                      <td>{{ currentTransaction.type }}</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <i class="fas fa-chevron-down fa-fw"></i>
+                        Inbound?
+                      </th>
+                      <td>{{ currentTransaction.inbound ? 'Yes' : 'No' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
+              <footer class="modal-card-foot">
+                <a class="button" v-on:click="currentTransaction = false">Cancel</a>
+              </footer>
+            </div>
+          </div>
+        
+        </div>
       </div>
     </div>
 
     <%- include("partials/js"); %>
-
-    <!-- QR SCANNER JAVASCRIPT -->
-    <script src="https://cdn.staticaly.com/gh/cozmo/jsQR/92217b76/dist/jsQR.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.21/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+    <script src="https://cdn.staticaly.com/gh/fengyuanchen/vue-qrcode/5a2dae4b/dist/vue-qrcode.min.js"></script>
+    <script src="https://unpkg.com/vue-qrcode-reader/dist/vue-qrcode-reader.browser.js"></script>
+    <script src="https://cdn.staticaly.com/gh/brockpetrie/vue-moment/e29269bd/dist/vue-moment.min.js"></script>
     <script>
-      var video = document.createElement("video");
-      var track;
-      var canvasElement = document.getElementById("qr-canvas");
-      var canvas = canvasElement.getContext("2d");
-      var doTicks = false;
+      var siPrefixes = [
+        { divider: 1e9 , suffix: 'G' },
+        { divider: 1e6 , suffix: 'M' },
+        { divider: 1e3 , suffix: 'k' }
+      ];
 
-      function tick() {
-        $("#qr-loading").show();
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          $("#qr-loading").hide();
-          canvasElement.hidden = false;
-          
-          canvasElement.height = video.videoHeight;
-          canvasElement.width = video.videoWidth;
-          canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-          var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-          var code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: "dontInvert",
-          });
-          if (code) {
-            parse(code.data);
-          }
-        }
-
-        if (doTicks) {
-          requestAnimationFrame(tick);
-        }
-      }
-
-      function parse(content) {
-        // Get rid of the content in the fields.
-        clearSend();
-
-        // *NEW* Guccicoin QR codes
-        if (content.startsWith("guccicoin:gucci")) {
-          // Create a URI parser using an 'a' element
-          var parser = document.createElement('a');
-
-          // Set the URI of the 'a' element to content.
-          parser.href = content;
-
-          // Set the value of the recipient field to the pathname (i.e address)
-          $("#sendRecipient").val(parser.pathname);
-          
-          // Parse the query string.
-          var query = parseQuery(parser.search);
-
-          // If we have an amount in the query
-          if (query.amount) {
-            // Set the value of the amount field to the amount.
-            $("#sendAmount").val(query.amount);
-          }
-
-          // If we have a payment ID.
-          if (query.id) {
-            // Set the value of the id field to the id.
-            $("#sendId").val(query.id);
-          }
-
-          // Get rid of the parser element
-          parser.remove();
-
-        // Plain Guccicoin QR
-        } else if (content.startsWith("gucci")) {
-          $("#sendRecipient").val(content);
-        } else {
-          // Or just return that it was a bad QR
-          return invalidScan();
-        }
-
-        validate();
-
-        // Clean up the QR scanner.
-        stopScan();
-      }
-
-      function invalidScan() {
-        stopScan();
-        alert("Invalid transaction QR!");
-      }
-
-      function startScan() {
-        navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment"
-          },
-          audio: false
-        }).then(function(stream) {
-          video.srcObject = stream;
-          video.setAttribute("playsinline", true);
-          video.play();
-          track = stream.getTracks()[0];
-          doTicks = true;
-          requestAnimationFrame(tick);
-          $("#qr-modal").addClass("is-active");
-        }).catch(function(e) {
-          console.error(e);
-          alert("There was a problem while trying to access a camera to use for scanning QR codes.");
-        });
-      }
-
-      function stopScan() {
-        if (track) {
-          if (track.stop) {
-            track.stop();
-          }
-          track = null;
-        }
-        doTicks = false;
-        canvasElement.hidden = true;
-        $("#qr-modal").removeClass("is-active");
-      }
-
-      function parseQuery(queryString) {
-        var query = {};
-        var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
-        for (var i = 0; i < pairs.length; i++) {
-          var pair = pairs[i].split('=');
-          query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
-        }
-        return query;
-      }
-    </script>
-
-    <!-- WALLET QR GENERATION JAVASCRIPT -->
-    <script>
-      var receiveQr = new QRCode(document.getElementById("receiveQr"), {
-        text: "guccicoin:<%= wallet.walletAddress %>"
+      Vue.filter("formatAmount", function(val) {
+        let output = parseFloat(val);
+        output = parseFloat(Math.round(output * 100) / 100).toFixed(2);
+        output = output.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return output + " GCX";
       });
 
-      function clearSend() {
-        $("#sendRecipient").val("");
-        $("#sendAmount").val("");
-        $("#sendFee").val("0.1");
-        $("#sendId").val("");
-      }
-    </script>
+      Vue.filter("formatAmountShort", function(val) {
+        let n = parseFloat(val);
 
-    <!-- SEND VALIDATION JAVASCRIPT -->
-    <script>
-      var recipientValid = false;
-      var amountValid = false;
-      var feeValid = false;
-      var idValid = false;
-
-      $(document).ready(validate);
-
-      function validate() {
-        recipientValid = true;
-        amountValid = true;
-        feeValid = true;
-        idValid = true;
-
-        if (($("#sendRecipient").val().length != 101 && $("#sendRecipient").val().length != 189) || $("#sendRecipient").val().substring(0, 5) != "gucci") {
-          recipientValid = false;
+        for (var i = 0; i < siPrefixes.length; i++) {
+          if (n >= siPrefixes[i].divider) {
+            return parseFloat(Math.round((n / siPrefixes[i].divider) * 100) / 100).toFixed(2).toString() + " " + siPrefixes[i].suffix + "GCX";
+          }
         }
 
-        if (($("#sendAmount").val() + $("#feeAmount").val()) > <%= balance.availableBalance %>) {
-          feeValid = false;
+        return Vue.options.filters.formatAmount(n);
+      });
+
+      Vue.component(VueQrcode.name, VueQrcode);
+      Vue.use(VueQrcodeReader);
+      Vue.use(vueMoment);
+
+      var app = new Vue({
+        el: '#app',
+        data: {
+          address: "a",
+          balance: {
+            availableBalance: 0,
+            lockedAmount: 0
+          },
+          transactions: [],
+          updateSuccess: true,
+          scanning: false,
+          transaction: {
+            recipient: "",
+            amount: 0,
+            fee: 0.1,
+            id: "",
+            mixin: 0
+          },
+          currentTransaction: false,
+          transactionPage: 0,
+          transactionPageSize: 5
+        },
+        mounted() {
+          this.update();
+        },
+        computed: {
+          pageCount() {
+            let l = this.transactions.length;
+            let s = this.transactionPageSize;
+            return Math.ceil(l/s);
+          },
+          paginatedData() {
+            const start = this.transactionPage * this.transactionPageSize;
+            const end = start + this.transactionPageSize;
+            return this.transactions.slice(start, end);
+          }
+        },
+        methods: {
+          parseQuery(queryString) {
+            var query = {};
+            var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+            for (var i = 0; i < pairs.length; i++) {
+              var pair = pairs[i].split('=');
+              query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+            }
+            return query;
+          },
+          send() {
+            var msg = "Are you sure that you'd like to send " + this.transaction.amount + " GCX (+ " + this.transaction.fee + " GCX fee)\n" +
+                      "to " + this.transaction.recipient + " with the payment ID '" + this.transaction.id + "' and a mixin of " + this.transaction.mixin + "?";
+            if (confirm(msg)) {
+              this.$http.post("/api/send", {
+                recipient: this.transaction.recipient,
+                amount: this.transaction.amount,
+                fee: this.transaction.fee,
+                paymentid: this.transaction.id,
+                mixin: this.transaction.mixin
+              }).then(function(res) {
+                if (!res.ok) { return this.sendError(res.statusText); }
+                if (!res.body.ok) { return this.sendError(res.body.error); }
+                return prompt("Transaction sent successfully with the following transaction hash", res.body.hash);
+              }, function(res) {
+                this.sendError(res.statusText);
+              })
+            }
+          },
+          sendError(e) {
+            alert("There was a problem sending your transaction: " + e);
+          },
+          update() {
+            this.$http.get("/api/info").then(function(res) {
+              if (!res.ok || !res.body.ok) { return this.updateError(res); }
+              this.address = res.body.address;
+              this.balance = res.body.balance;
+            }, this.updateError);
+
+            this.$http.get("/api/transactions").then(function(res) {
+              if (!res.ok || !res.body.ok) { return this.updateError(res); }
+              this.transactions = res.body.transactions.reverse().filter(function(el) {
+                return el.ctype != "hide";
+              });
+            }, this.updateError);
+          },
+          updateError(res) {
+            this.updateSuccess = false;
+            console.error("Error updating!", res);
+          },
+          qrDecode(result) {
+            if (result.startsWith("guccicoin:gucci")) {
+              // Create a URI parser using an 'a' element
+              var parser = document.createElement('a');
+              // Set the URI of the 'a' element to content.
+              parser.href = result;
+              // Set the value of the recipient field to the pathname (i.e address)
+              this.transaction.recipient = parser.pathname;
+              
+              // Parse the query string.
+              var query = this.parseQuery(parser.search);
+              // If we have an amount in the query
+              if (query.amount) {
+                // Set the value of the amount field to the amount.
+                this.transaction.amount = query.amount;
+              }
+              // If we have a payment ID.
+              if (query.id) {
+                // Set the value of the id field to the id.
+                this.transaction.id = query.id;
+              }
+              // Get rid of the parser element
+              parser.remove();
+            // Plain Guccicoin QR
+            } else if (result.startsWith("gucci")) {
+              this.transaction.recipient = result;
+            } else {
+              // Or just return that it was a bad QR
+              alert("The scanned QR code was unable to be decoded.");
+            }
+
+            this.scanning = false;
+          },
+          async qrInit(p) {
+            try {
+              await p
+            } catch (err) {
+              let error = "";
+              switch (error.name) {
+                case "NotAllowedError":
+                  error = "You need to grant permission for your camera to be used.";
+                  break;
+                case "NotFoundError":
+                  error = "There are no cameras that can be used on this device.";
+                  break;
+                case "NotSupportedError":
+                  error = "A secure context is required (e.g HTTPS, localhost).";
+                  break;
+                case "NotReadableError":
+                  error = "The camera is already in use.";
+                  break;
+                case "OverconstrainedError":
+                  error = "The installed cameras are not suitable.";
+                  break;
+                case "StreamApiNotSupportedError":
+                  error = "Stream API is not supported in your browser.";
+                  break;
+                default:
+                  error = error.name;
+              }
+
+              alert("There was a problem while starting the QR scanner: " + error);
+            }
+          }
         }
-
-        if (($("#sendAmount").val() > <%= balance.availableBalance %>) || $("#sendAmount").val() <= 0) {
-          amountValid = false;
-        }
-
-        if (($("#feeAmount").val() > <%= balance.availableBalance %>) || $("#feeAmount").val() <= 0) {
-          feeValid = false;
-        }
-
-        if ($("#sendId").val().length != 64 || !isHex($("#sendId").val())) {
-          idValid = false;
-        }
-
-        if ($("#sendId").val() == "") {
-          idValid = true;
-        }
-
-        recipientValid ? $("#sendRecipient").addClass("is-success").removeClass("is-danger") : $("#sendRecipient").addClass("is-danger").removeClass("is-success");
-        amountValid ? $("#sendAmount").addClass("is-success").removeClass("is-danger") : $("#sendAmount").addClass("is-danger").removeClass("is-success");
-        feeValid ? $("#sendFee").addClass("is-success").removeClass("is-danger") : $("#sendFee").addClass("is-danger").removeClass("is-success");
-        idValid ? $("#sendId").addClass("is-success").removeClass("is-danger") : $("#sendId").addClass("is-danger").removeClass("is-success");
-
-        $("#sendButton").prop("disabled", !(recipientValid && amountValid && feeValid && idValid));
-      }
-      
-      $("#sendRecipient").change(validate).keydown(validate);
-      $("#sendAmount").change(validate).keydown(validate);
-      $("#sendFee").change(validate).keydown(validate);
-      $("#sendId").change(validate).keydown(validate);
-
-      function isHex(input) {
-        var re = /[0-9A-Fa-f]{6}/g;
-        return re.test(input);
-      }
+      })
     </script>
   </body>
 </html>
