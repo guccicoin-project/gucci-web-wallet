@@ -11,14 +11,14 @@ const signale = require("signale");
 
 const daemon = new TurtleCoin.TurtleCoind({
   host: process.env.DAEMON_HOST,
-  port: 10181,
+  port: parseInt(process.env.DAEMON_PORT) || 10181,
   timeout: 2000,
   ssl: false,
 });
 
 const service = new TurtleCoin.TurtleService({
   host: process.env.SERVICE_HOST,
-  port: 10191,
+  port: parseInt(process.env.SERVICE_POST) || 10191,
   timeout: 2000,
   ssl: false,
   rpcPassword: process.env.SERVICE_PASSWORD,
